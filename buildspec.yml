@@ -9,8 +9,13 @@ env:
 phases:
   install:
     commands:
+      - set -euxo pipefail
       - echo "Installing Helm..."
-      - curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+      - curl -L https://get.helm.sh/helm-v3.14.4-linux-amd64.tar.gz -o helm.tgz
+      - tar -xzf helm.tgz
+      - mv linux-amd64/helm /usr/local/bin/helm
+      - chmod +x /usr/local/bin/helm
+      - which helm
       - helm version
 
   pre_build:
@@ -37,7 +42,6 @@ phases:
     commands:
       - echo "== POST_BUILD =="
       - aws eks update-kubeconfig --region ${REGION} --name ${CLUSTER_NAME}
-      - echo "Deploying with Helm..."
       - helm upgrade --install java-ci-cd-app ./helm \
           --set image.repository=${ECR_REPO} \
           --set image.tag=${IMAGE_TAG}
