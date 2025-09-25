@@ -1,14 +1,14 @@
 # ---------- Build stage ----------
-FROM maven:3.9-eclipse-temurin-17 AS builder
+FROM public.ecr.aws/docker/library/maven:3.9-eclipse-temurin-17 AS builder
 WORKDIR /app
 COPY pom.xml .
-# Pre-fetch deps (improves build performance)
+# Pre-fetch dependencies to speed subsequent builds
 RUN mvn -B -q -e -DskipTests dependency:go-offline
 COPY src ./src
 RUN mvn -B -DskipTests package
 
 # ---------- Runtime stage ----------
-FROM eclipse-temurin:17-jre
+FROM public.ecr.aws/docker/library/eclipse-temurin:17-jre
 WORKDIR /app
 COPY --from=builder /app/target/demo-*.jar app.jar
 EXPOSE 8080
