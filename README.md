@@ -1,6 +1,6 @@
 # End-to-End Java CI/CD Pipeline on AWS (EKS + CodePipeline + CodeBuild + ECR + Helm)
 
-This guide walks through the exact **steps we successfully completed** to set up a CI/CD pipeline that deploys a Java Spring Boot application to Amazon EKS using AWS CodePipeline, CodeBuild, ECR, and Helm.
+This guide walks through the exact **steps I successfully completed** to set up a CI/CD pipeline that deploys a Java Spring Boot application to Amazon EKS using AWS CodePipeline, CodeBuild, ECR, and Helm.
 
 ---
 
