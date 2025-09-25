@@ -11,17 +11,19 @@ phases:
     commands:
       - set -euxo pipefail
       - echo "Installing Helm..."
-      - curl -L https://get.helm.sh/helm-v3.14.4-linux-amd64.tar.gz -o helm.tgz
+      # download a specific helm version to avoid mirrors redirect issues
+      - curl -L -o helm.tgz https://get.helm.sh/helm-v3.14.4-linux-amd64.tar.gz
       - tar -xzf helm.tgz
-      - mv linux-amd64/helm /usr/local/bin/helm
-      - chmod +x /usr/local/bin/helm
+      - install -m 0755 linux-amd64/helm /usr/local/bin/helm
+      - ls -l /usr/local/bin/helm
+      - echo "PATH=$PATH"
       - which helm
       - helm version
 
   pre_build:
     commands:
       - echo "== PRE_BUILD =="
-      - aws --version
+      - aws --version || true
       - docker --version
       - echo "ECR_REPO=${ECR_REPO}"
       - REGISTRY=$(echo ${ECR_REPO} | cut -d'/' -f1)
@@ -41,7 +43,12 @@ phases:
   post_build:
     commands:
       - echo "== POST_BUILD =="
+      - echo "Verifying Helm just before deploy..."
+      - which helm || (echo "Helm missing!" && exit 127)
+      - helm version
       - aws eks update-kubeconfig --region ${REGION} --name ${CLUSTER_NAME}
+      - echo "Deploying with Helm..."
       - helm upgrade --install java-ci-cd-app ./helm \
           --set image.repository=${ECR_REPO} \
           --set image.tag=${IMAGE_TAG}
+
