@@ -4,16 +4,20 @@ env:
     REGION: "us-east-1"
     CLUSTER_NAME: "java-ci-cd-cluster"
     ECR_REPO: "914261932225.dkr.ecr.us-east-1.amazonaws.com/java-ci-cd-app"
+
 phases:
+  # NOTE: Do NOT set a docker runtime here. CodeBuild standard images don't support
+  # 'docker' under runtime-versions. Docker is preinstalled; enable Privileged mode.
   install:
     runtime-versions:
-      docker: 20
       java: corretto17
     commands:
       - set -euxo pipefail
       - echo "Installing Helm..."
-      - curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+      - curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+      - which helm
       - helm version
+
   pre_build:
     commands:
       - set -euxo pipefail
@@ -26,6 +30,7 @@ phases:
       - aws ecr get-login-password --region ${REGION} | docker login --username AWS --password-stdin ${REGISTRY}
       - IMAGE_TAG=$(echo ${CODEBUILD_RESOLVED_SOURCE_VERSION:-$(date +%Y%m%d-%H%M%S)} | cut -c1-7)
       - echo "IMAGE_TAG=${IMAGE_TAG}"
+
   build:
     commands:
       - set -euxo pipefail
@@ -34,8 +39,10 @@ phases:
       - docker build -t ${ECR_REPO}:${IMAGE_TAG} .
       - echo "Pushing image..."
       - docker push ${ECR_REPO}:${IMAGE_TAG}
+
   post_build:
     commands:
+      - set -euxo pipefail
       - echo "== POST_BUILD =="
       - echo "Verifying Helm just before deploy..."
       - which helm || (echo "Helm missing!" && exit 127)
