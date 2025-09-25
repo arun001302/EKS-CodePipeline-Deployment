@@ -9,7 +9,7 @@ env:
   variables:
     REGION: "us-east-1"
     CLUSTER_NAME: "java-ci-cd-cluster"
-    ECR_REPO: "914261932225.dkr.ecr.us-east-1.amazonaws.com/java-ci-cd-app"
+    ECR_REPO: "914261932224.dkr.ecr.us-east-1.amazonaws.com/java-ci-cd-app"
 
 phases:
   install:
