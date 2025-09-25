@@ -1,6 +1,6 @@
 # Java CI/CD Pipeline on AWS EKS
 
-This is my personal walkthrough of how I successfully set up a complete CI/CD pipeline to deploy a Java Spring Boot app onto Amazon EKS. Everything is written in **first person** so I can retrace the exact steps I followed.
+This is my personal walkthrough of how I successfully set up a complete CI/CD pipeline to deploy a Java Spring Boot app onto Amazon EKS. 
 
 ---
 
