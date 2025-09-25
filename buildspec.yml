@@ -48,7 +48,4 @@ phases:
       - echo "Verifying cluster connectivity..."
       - kubectl get nodes
       - echo "Deploying with Helm..."
-      - helm upgrade --install java-ci-cd-app ./helm \
-          --set image.repository=${ECR_REPO} \
-          --set image.tag=${IMAGE_TAG} \
-          --wait --timeout=300s
+      - helm upgrade --install java-ci-cd-app ./helm --set image.repository=${ECR_REPO} --set image.tag=${IMAGE_TAG} --wait --timeout=300s
