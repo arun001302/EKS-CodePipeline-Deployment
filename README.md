@@ -64,7 +64,7 @@ aws ecr create-repository   --repository-name java-ci-cd-app   --region us-east-
 The repo URI looked like:
 
 ```
-914261932225.dkr.ecr.us-east-1.amazonaws.com/java-ci-cd-app
+914261932224.dkr.ecr.us-east-1.amazonaws.com/java-ci-cd-app
 ```
 
 ---
@@ -81,7 +81,7 @@ env:
   variables:
     REGION: "us-east-1"
     CLUSTER_NAME: "java-ci-cd-cluster"
-    ECR_REPO: "914261932225.dkr.ecr.us-east-1.amazonaws.com/java-ci-cd-app"
+    ECR_REPO: "914261932224.dkr.ecr.us-east-1.amazonaws.com/java-ci-cd-app"
 
 phases:
   install:
