@@ -1,5 +1,4 @@
 version: 0.2
-
 env:
   variables:
     REGION: "us-east-1"
@@ -9,6 +8,7 @@ env:
 phases:
   pre_build:
     commands:
+      - set -euxo pipefail
       - echo "Deriving registry from ECR_REPO..."
       - REGISTRY=$(echo ${ECR_REPO} | cut -d'/' -f1)
       - echo "Logging in to ECR registry ${REGISTRY}..."
@@ -29,3 +29,4 @@ phases:
       - helm upgrade --install java-ci-cd-app ./helm \
           --set image.repository=${ECR_REPO} \
           --set image.tag=${IMAGE_TAG}
+
