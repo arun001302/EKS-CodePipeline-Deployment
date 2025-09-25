@@ -1,30 +1,15 @@
-# Stage 1: Build the application using Maven
-FROM openjdk:17-jdk-slim as builder
+# ---------- Build stage ----------
+FROM maven:3.9-eclipse-temurin-17 AS builder
 WORKDIR /app
-
-# Copy only the files needed to download dependencies
-COPY .mvn/ .mvn
-COPY mvnw pom.xml ./
-
-# Add execute permissions to the Maven Wrapper script
-RUN chmod +x ./mvnw
-
-# Download dependencies first. This step is cached if pom.xml doesn't change.
-RUN ./mvnw dependency:go-offline
-
-# Copy the rest of the source code
+COPY pom.xml .
+# Pre-fetch deps (improves build performance)
+RUN mvn -B -q -e -DskipTests dependency:go-offline
 COPY src ./src
+RUN mvn -B -DskipTests package
 
-# Now, build the application using the downloaded dependencies
-RUN ./mvnw clean package -DskipTests
-
-# Stage 2: Create the final, smaller image
-FROM openjdk:17-jdk-slim
+# ---------- Runtime stage ----------
+FROM eclipse-temurin:17-jre
 WORKDIR /app
-
-# Copy the built JAR from the builder stage
-COPY --from=builder /app/target/*.jar app.jar
-
-# Set the entrypoint to run the application
-ENTRYPOINT ["java","-jar","app.jar"]
-
+COPY --from=builder /app/target/demo-*.jar app.jar
+EXPOSE 8080
+ENTRYPOINT ["java","-jar","/app/app.jar"]
