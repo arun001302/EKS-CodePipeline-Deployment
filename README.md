@@ -239,4 +239,4 @@ Hello from EKS!
 - The app was deployed automatically to Amazon EKS using Helm.  
 - I could access it via a LoadBalancer URL.
 
-This was the end-to-end CI/CD workflow I implemented today.
+
