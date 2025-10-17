@@ -1,14 +1,13 @@
 # Java CI/CD Pipeline on AWS EKS
 
-This is my personal walkthrough of how I successfully set up a complete CI/CD pipeline to deploy a Java Spring Boot app onto Amazon EKS. 
+A complete walkthrough of setting up a CI/CD pipeline to deploy a Java Spring Boot application onto Amazon EKS using AWS CodePipeline, CodeBuild, and Helm.
 
 ---
 
-## 1. Preparing My Environment
+## 1. Environment Setup
 
-### Tools I Installed on CloudShell
-The first thing I did was make sure I had the right tools in **AWS CloudShell**.  
-I installed the following:
+### Required Tools (AWS CloudShell)
+Install the following tools in AWS CloudShell:
 
 ```bash
 # Update system
@@ -37,15 +36,20 @@ helm version
 
 ---
 
-## 2. Creating My EKS Cluster
+## 2. Creating the EKS Cluster
 
-I created the cluster with:
+Create the cluster with eksctl:
 
 ```bash
-eksctl create cluster   --name java-ci-cd-cluster   --region us-east-1   --nodegroup-name workers   --node-type t3.medium   --nodes 2
+eksctl create cluster \
+  --name <your-cluster-name> \
+  --region <your-region> \
+  --nodegroup-name workers \
+  --node-type t3.medium \
+  --nodes 2
 ```
 
-This gave me a running EKS cluster. I also verified it with:
+Verify the cluster is running:
 
 ```bash
 kubectl get nodes
@@ -55,16 +59,17 @@ kubectl get nodes
 
 ## 3. Setting Up ECR
 
-I created an **ECR repository** to store my Docker images:
+Create an ECR repository to store Docker images:
 
 ```bash
-aws ecr create-repository   --repository-name java-ci-cd-app   --region us-east-1
+aws ecr create-repository \
+  --repository-name <your-app-name> \
+  --region <your-region>
 ```
 
-The repo URI looked like:
-
+Note the repository URI for later use:
 ```
-914261932224.dkr.ecr.us-east-1.amazonaws.com/java-ci-cd-app
+<account-id>.dkr.ecr.<region>.amazonaws.com/<repository-name>
 ```
 
 ---
@@ -73,15 +78,15 @@ The repo URI looked like:
 
 ### Buildspec File
 
-I created a `buildspec.yml` in my repo root:
+Create a `buildspec.yml` in your repository root:
 
 ```yaml
 version: 0.2
 env:
   variables:
-    REGION: "us-east-1"
-    CLUSTER_NAME: "java-ci-cd-cluster"
-    ECR_REPO: "914261932224.dkr.ecr.us-east-1.amazonaws.com/java-ci-cd-app"
+    REGION: "<your-region>"
+    CLUSTER_NAME: "<your-cluster-name>"
+    ECR_REPO: "<account-id>.dkr.ecr.<region>.amazonaws.com/<repository-name>"
 
 phases:
   install:
@@ -112,16 +117,16 @@ phases:
     commands:
       - echo "Deploying with Helm..."
       - aws eks update-kubeconfig --region ${REGION} --name ${CLUSTER_NAME}
-      - helm upgrade --install java-ci-cd-app ./helm         --set image.repository=${ECR_REPO}         --set image.tag=${IMAGE_TAG}
+      - helm upgrade --install <your-app-name> ./helm \
+        --set image.repository=${ECR_REPO} \
+        --set image.tag=${IMAGE_TAG}
 ```
 
-I made sure **privileged mode** was enabled in CodeBuild to allow Docker.
+**Important:** Enable **privileged mode** in your CodeBuild project settings to allow Docker operations.
 
 ---
 
 ## 5. Project Structure
-
-Here’s the folder structure I used:
 
 ```
 my-java-app/
@@ -131,8 +136,8 @@ my-java-app/
 ├── Dockerfile
 ├── buildspec.yml
 └── helm/
-    └── Chart.yaml
-    └── values.yaml
+    ├── Chart.yaml
+    ├── values.yaml
     └── templates/
         ├── deployment.yaml
         └── service.yaml
@@ -153,7 +158,7 @@ COPY --from=builder /app/target/*.jar app.jar
 ENTRYPOINT ["java", "-jar", "app.jar"]
 ```
 
-### Helm Chart Example
+### Helm Chart Configuration
 
 **helm/values.yaml**
 ```yaml
@@ -174,19 +179,19 @@ service:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: java-ci-cd-app
+  name: {{ .Chart.Name }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app: java-ci-cd-app
+      app: {{ .Chart.Name }}
   template:
     metadata:
       labels:
-        app: java-ci-cd-app
+        app: {{ .Chart.Name }}
     spec:
       containers:
-        - name: java-ci-cd-app
+        - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           ports:
             - containerPort: 8080
@@ -197,13 +202,13 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: java-ci-cd-app
+  name: {{ .Chart.Name }}
 spec:
-  type: LoadBalancer
+  type: {{ .Values.service.type }}
   selector:
-    app: java-ci-cd-app
+    app: {{ .Chart.Name }}
   ports:
-    - port: 80
+    - port: {{ .Values.service.port }}
       targetPort: 8080
 ```
 
@@ -211,32 +216,44 @@ spec:
 
 ## 6. Deploying and Testing
 
-Once the pipeline ran successfully, I checked my pods:
+Once the pipeline runs successfully, check your pods:
 
 ```bash
 kubectl get pods
 ```
 
-Then I checked services:
+Check services to get the LoadBalancer URL:
 
 ```bash
 kubectl get svc
 ```
 
-I copied the **EXTERNAL-IP** of the LoadBalancer and opened it in my browser.  
-The page showed:
-
-```
-Hello from EKS!
-```
+Access your application using the **EXTERNAL-IP** of the LoadBalancer service.
 
 ---
 
-## ✅ Final Result
+## Architecture Overview
 
-- My Java Spring Boot app was built with Maven.  
-- The Docker image was pushed to Amazon ECR.  
-- The app was deployed automatically to Amazon EKS using Helm.  
-- I could access it via a LoadBalancer URL.
+- **Java Spring Boot** application built with Maven
+- **Docker** image pushed to Amazon ECR
+- **Automated deployment** to Amazon EKS using Helm
+- **LoadBalancer** service for external access
+- **CI/CD** pipeline using AWS CodePipeline and CodeBuild
 
+---
 
+## Prerequisites
+
+- AWS account with appropriate permissions
+- AWS CLI configured
+- Git repository for source code
+- Basic knowledge of Kubernetes and Docker
+
+## Next Steps
+
+Consider adding:
+- Monitoring with CloudWatch or Prometheus
+- Ingress controller for better routing
+- Auto-scaling configurations
+- Multiple environments (dev, staging, prod)
+- Secrets management with AWS Secrets Manager or Kubernetes Secrets
